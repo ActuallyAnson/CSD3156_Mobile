@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors - Orange/Coral theme for food app -->
+    <color name="primary">#FF6B35</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#FFDBC9</color>
+    <color name="on_primary_container">#2D1600</color>
+
+    <!-- Secondary Colors - Green for freshness -->
+    <color name="secondary">#4CAF50</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#C8E6C9</color>
+    <color name="on_secondary_container">#1B5E20</color>
+
+    <!-- Tertiary Colors - Brown for warmth -->
+    <color name="tertiary">#795548</color>
+    <color name="on_tertiary">#FFFFFF</color>
+    <color name="tertiary_container">#D7CCC8</color>
+    <color name="on_tertiary_container">#3E2723</color>
+
+    <!-- Error Colors -->
+    <color name="error">#BA1A1A</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="error_container">#FFDAD6</color>
+    <color name="on_error_container">#410002</color>
+
+    <!-- Background and Surface -->
+    <color name="background">#FFFBFF</color>
+    <color name="on_background">#201A17</color>
+    <color name="surface">#FFFBFF</color>
+    <color name="on_surface">#201A17</color>
+    <color name="surface_variant">#F5DED3</color>
+    <color name="on_surface_variant">#52443C</color>
+
+    <!-- Outline -->
+    <color name="outline">#85746A</color>
+    <color name="outline_variant">#D8C2B7</color>
+
+    <!-- Dark Theme Colors -->
+    <color name="primary_dark">#FFB68E</color>
+    <color name="on_primary_dark">#4E2600</color>
+    <color name="primary_container_dark">#703900</color>
+    <color name="on_primary_container_dark">#FFDBC9</color>
+
+    <color name="secondary_dark">#A5D6A7</color>
+    <color name="on_secondary_dark">#1B5E20</color>
+    <color name="secondary_container_dark">#2E7D32</color>
+    <color name="on_secondary_container_dark">#C8E6C9</color>
+
+    <color name="background_dark">#201A17</color>
+    <color name="on_background_dark">#ECE0DB</color>
+    <color name="surface_dark">#201A17</color>
+    <color name="on_surface_dark">#ECE0DB</color>
+</resources>

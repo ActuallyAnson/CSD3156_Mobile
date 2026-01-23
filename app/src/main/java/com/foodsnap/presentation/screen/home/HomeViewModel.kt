@@ -32,7 +32,8 @@ data class HomeUiState(
     val selectedCategoryApiValue: String? = null,
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val randomRecipeId: Long? = null
 )
 
 /**
@@ -172,5 +173,31 @@ class HomeViewModel @Inject constructor(
             _uiState.update { it.copy(isRefreshing = true) }
             searchByCategory(_uiState.value.selectedCategoryApiValue!!)
         }
+    }
+
+    /**
+     * Gets a random recipe for the shake-to-discover feature.
+     * Sets randomRecipeId in UI state which triggers navigation.
+     */
+    fun getRandomRecipe() {
+        viewModelScope.launch {
+            getRandomRecipesUseCase(count = 1, tags = null).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        result.data?.firstOrNull()?.let { recipe ->
+                            _uiState.update { it.copy(randomRecipeId = recipe.id) }
+                        }
+                    }
+                    else -> { /* Ignore loading/error for shake */ }
+                }
+            }
+        }
+    }
+
+    /**
+     * Clears the random recipe ID after navigation.
+     */
+    fun clearRandomRecipe() {
+        _uiState.update { it.copy(randomRecipeId = null) }
     }
 }

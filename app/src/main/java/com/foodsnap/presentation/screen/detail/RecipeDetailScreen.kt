@@ -22,9 +22,11 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -81,6 +83,7 @@ import com.foodsnap.util.toRelativeTime
  *
  * @param recipeId ID of the recipe to display
  * @param onBackClick Callback when back button is pressed
+ * @param onStartCooking Callback when start cooking button is pressed
  * @param viewModel The ViewModel for this screen
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,6 +91,7 @@ import com.foodsnap.util.toRelativeTime
 fun RecipeDetailScreen(
     recipeId: Long,
     onBackClick: () -> Unit,
+    onStartCooking: () -> Unit = {},
     viewModel: RecipeDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -170,6 +174,7 @@ fun RecipeDetailScreen(
                     RecipeDetailContent(
                         uiState = uiState,
                         onAddComment = viewModel::addComment,
+                        onStartCooking = onStartCooking,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -185,6 +190,7 @@ fun RecipeDetailScreen(
 private fun RecipeDetailContent(
     uiState: RecipeDetailUiState,
     onAddComment: (String, Int) -> Unit,
+    onStartCooking: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val recipe = uiState.recipe ?: return
@@ -251,10 +257,33 @@ private fun RecipeDetailContent(
         // Instructions Section
         item {
             Spacer(modifier = Modifier.height(24.dp))
-            SectionHeader(
-                title = stringResource(R.string.instructions),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionHeader(title = stringResource(R.string.instructions))
+
+                // Start Cooking Button
+                if (recipe.instructions.isNotEmpty()) {
+                    Button(
+                        onClick = onStartCooking,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Start Cooking")
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
         }
 

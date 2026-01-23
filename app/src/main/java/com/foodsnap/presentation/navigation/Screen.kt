@@ -9,6 +9,11 @@ package com.foodsnap.presentation.navigation
 sealed class Screen(val route: String) {
 
     /**
+     * Splash screen - animated branding shown on app launch.
+     */
+    data object Splash : Screen("splash")
+
+    /**
      * Home screen - main entry point showing featured recipes and categories.
      */
     data object Home : Screen("home")
@@ -50,6 +55,16 @@ sealed class Screen(val route: String) {
     data object Search : Screen("search?query={query}") {
         fun createRoute(query: String): String {
             return "search?query=$query"
+        }
+    }
+
+    /**
+     * Cooking mode screen - full-screen step-by-step instructions.
+     * @param recipeId The ID of the recipe to cook
+     */
+    data object CookingMode : Screen("cooking/{recipeId}") {
+        fun createRoute(recipeId: Long): String {
+            return "cooking/$recipeId"
         }
     }
 

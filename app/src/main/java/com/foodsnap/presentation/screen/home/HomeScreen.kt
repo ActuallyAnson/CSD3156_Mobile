@@ -1,5 +1,6 @@
 package com.foodsnap.presentation.screen.home
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,10 +24,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,8 +40,10 @@ import com.foodsnap.R
 import com.foodsnap.presentation.components.CategoryChips
 import com.foodsnap.presentation.components.RecipeCard
 import com.foodsnap.presentation.components.SearchBar
+import com.foodsnap.presentation.components.ShimmerRecipeGrid
 import com.foodsnap.presentation.components.defaultCategories
 import com.foodsnap.presentation.navigation.CameraMode
+import com.foodsnap.util.ShakeDetector
 
 /**
  * Home screen displaying featured recipes, categories, and search.
@@ -60,6 +67,31 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    // Shake detection for random recipe
+    val shakeDetector = remember {
+        ShakeDetector(context) {
+            Toast.makeText(context, "Finding a random recipe...", Toast.LENGTH_SHORT).show()
+            viewModel.getRandomRecipe()
+        }
+    }
+
+    // Start/stop shake detector with lifecycle
+    DisposableEffect(Unit) {
+        shakeDetector.start()
+        onDispose {
+            shakeDetector.stop()
+        }
+    }
+
+    // Navigate to random recipe when found
+    LaunchedEffect(uiState.randomRecipeId) {
+        uiState.randomRecipeId?.let { recipeId ->
+            onRecipeClick(recipeId)
+            viewModel.clearRandomRecipe()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -126,12 +158,10 @@ fun HomeScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
                     uiState.isLoading && uiState.recipes.isEmpty() -> {
-                        Box(
+                        ShimmerRecipeGrid(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
+                            itemCount = 6
+                        )
                     }
                     uiState.error != null && uiState.recipes.isEmpty() -> {
                         ErrorContent(

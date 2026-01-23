@@ -78,6 +78,9 @@ android {
             excludes += "/META-INF/INDEX.LIST"
             excludes += "/META-INF/DEPENDENCIES"
         }
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     // Enable room schema export for migrations
@@ -120,9 +123,6 @@ dependencies {
 
     // ML Kit
     implementation(libs.bundles.mlkit)
-
-    // AR (SceneView)
-    implementation(libs.arsceneview)
 
     // Image Loading
     implementation(libs.coil.compose)

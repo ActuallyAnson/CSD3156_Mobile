@@ -64,7 +64,6 @@ import coil.compose.AsyncImage
 import com.foodsnap.R
 import com.foodsnap.domain.model.Comment
 import com.foodsnap.domain.model.RecipeIngredient
-import com.foodsnap.presentation.components.ARPreviewButton
 import com.foodsnap.presentation.components.RatingBar
 import com.foodsnap.presentation.theme.AvailableColor
 import com.foodsnap.util.toRelativeTime
@@ -77,12 +76,10 @@ import com.foodsnap.util.toRelativeTime
  * - Title and metadata (time, servings)
  * - Ingredients list with checkboxes
  * - Step-by-step instructions
- * - AR preview button
  * - Save/share actions
  * - Comments section with add comment form
  *
  * @param recipeId ID of the recipe to display
- * @param onARPreviewClick Callback when AR preview button is clicked
  * @param onBackClick Callback when back button is pressed
  * @param viewModel The ViewModel for this screen
  */
@@ -90,7 +87,6 @@ import com.foodsnap.util.toRelativeTime
 @Composable
 fun RecipeDetailScreen(
     recipeId: Long,
-    onARPreviewClick: () -> Unit,
     onBackClick: () -> Unit,
     viewModel: RecipeDetailViewModel = hiltViewModel()
 ) {
@@ -173,7 +169,6 @@ fun RecipeDetailScreen(
                 uiState.recipe != null -> {
                     RecipeDetailContent(
                         uiState = uiState,
-                        onARPreviewClick = onARPreviewClick,
                         onAddComment = viewModel::addComment,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -189,7 +184,6 @@ fun RecipeDetailScreen(
 @Composable
 private fun RecipeDetailContent(
     uiState: RecipeDetailUiState,
-    onARPreviewClick: () -> Unit,
     onAddComment: (String, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -234,17 +228,6 @@ private fun RecipeDetailContent(
                     .fillMaxWidth()
                     .padding(16.dp)
             )
-        }
-
-        // AR Preview Button
-        item {
-            ARPreviewButton(
-                onClick = onARPreviewClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
         }
 
         // Ingredients Section

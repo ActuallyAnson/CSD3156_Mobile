@@ -7,7 +7,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.foodsnap.presentation.screen.ar.ARPreviewScreen
 import com.foodsnap.presentation.screen.camera.CameraScreen
 import com.foodsnap.presentation.screen.detail.RecipeDetailScreen
 import com.foodsnap.presentation.screen.home.HomeScreen
@@ -99,9 +98,6 @@ fun FoodSnapNavGraph(
 
             RecipeDetailScreen(
                 recipeId = recipeId,
-                onARPreviewClick = {
-                    navController.navigate(Screen.ARPreview.createRoute(recipeId))
-                },
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -112,21 +108,6 @@ fun FoodSnapNavGraph(
                 onRecipeClick = { recipeId ->
                     navController.navigate(Screen.RecipeDetail.createRoute(recipeId))
                 }
-            )
-        }
-
-        // AR Preview Screen
-        composable(
-            route = Screen.ARPreview.route,
-            arguments = listOf(
-                navArgument("recipeId") { type = NavType.LongType }
-            )
-        ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getLong("recipeId") ?: return@composable
-
-            ARPreviewScreen(
-                recipeId = recipeId,
-                onBackClick = { navController.popBackStack() }
             )
         }
 

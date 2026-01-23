@@ -9,21 +9,13 @@
     <!-- Camera permission for barcode scanning and ingredient recognition -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- AR requires camera feature -->
+    <!-- Camera features for ML Kit -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
     <uses-feature
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
-
-    <!-- ARCore requirements -->
-    <uses-feature
-        android:name="android.hardware.camera.ar"
-        android:required="false" />
-    <uses-feature
-        android:glEsVersion="0x00020000"
-        android:required="true" />
 
     <application
         android:name=".FoodSnapApplication"
@@ -36,11 +28,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FoodSnap"
         tools:targetApi="34">
-
-        <!-- ARCore metadata: optional means app works without AR -->
-        <meta-data
-            android:name="com.google.ar.core"
-            android:value="optional" />
 
         <!-- Main Activity -->
         <activity

@@ -39,16 +39,6 @@ sealed class Screen(val route: String) {
     data object SavedRecipes : Screen("saved")
 
     /**
-     * AR preview screen - shows 3D model of a dish in AR.
-     * @param recipeId The ID of the recipe to preview
-     */
-    data object ARPreview : Screen("ar/{recipeId}") {
-        fun createRoute(recipeId: Long): String {
-            return "ar/$recipeId"
-        }
-    }
-
-    /**
      * User inventory screen - shows user's pantry/ingredients.
      */
     data object Inventory : Screen("inventory")

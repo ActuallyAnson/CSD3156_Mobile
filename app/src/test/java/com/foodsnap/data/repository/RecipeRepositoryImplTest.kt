@@ -68,7 +68,7 @@ class RecipeRepositoryImplTest {
         // Arrange
         coEvery { recipeDao.searchRecipesList(any()) } returns emptyList()
         coEvery { spoonacularApi.searchRecipes(any(), any(), any(), any()) } returns
-            RecipeSearchResponse(results = emptyList(), totalResults = 0)
+            RecipeSearchResponse(results = emptyList(), offset = 0, number = 0, totalResults = 0)
 
         // Act
         val emissions = repository.searchRecipes("pasta").toList()
@@ -86,7 +86,7 @@ class RecipeRepositoryImplTest {
         )
         coEvery { recipeDao.searchRecipesList(any()) } returns cachedRecipes
         coEvery { spoonacularApi.searchRecipes(any(), any(), any(), any()) } returns
-            RecipeSearchResponse(results = emptyList(), totalResults = 0)
+            RecipeSearchResponse(results = emptyList(), offset = 0, number = 0, totalResults = 0)
 
         // Act
         val emissions = repository.searchRecipes("pasta").toList()
@@ -103,7 +103,12 @@ class RecipeRepositoryImplTest {
         coEvery { spoonacularApi.searchRecipes(any(), any(), any(), any()) } returns
             RecipeSearchResponse(
                 results = listOf(
-                    RecipeSearchResultDto(id = 1, title = "Test Recipe", image = null, imageType = null)
+                    RecipeSearchResultDto(
+                        id = 1, title = "Test Recipe", image = null, imageType = null,
+                        servings = null, readyInMinutes = null, sourceUrl = null,
+                        summary = null, cuisines = null, dishTypes = null,
+                        diets = null, nutrition = null
+                    )
                 ),
                 totalResults = 1
             )

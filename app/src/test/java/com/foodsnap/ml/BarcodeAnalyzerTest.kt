@@ -30,8 +30,8 @@ class BarcodeAnalyzerTest {
     fun `ImageLabelResult contains detected labels`() {
         // Arrange
         val labels = listOf(
-            AnalyzerResult.DetectedLabel("Apple", 0.95f),
-            AnalyzerResult.DetectedLabel("Fruit", 0.85f)
+            DetectedLabel("Apple", 0.95f),
+            DetectedLabel("Fruit", 0.85f)
         )
 
         // Act
@@ -39,23 +39,28 @@ class BarcodeAnalyzerTest {
 
         // Assert
         assertEquals(2, result.labels.size)
-        assertEquals("Apple", result.labels[0].label)
+        assertEquals("Apple", result.labels[0].text)
         assertEquals(0.95f, result.labels[0].confidence, 0.01f)
     }
 
     @Test
-    fun `DishRecognitionResult maps to search terms`() {
+    fun `DishRecognitionResult has correct dish name and related labels`() {
         // Arrange & Act
+        val relatedLabels = listOf(
+            DetectedLabel("pasta", 0.88f),
+            DetectedLabel("italian", 0.75f),
+            DetectedLabel("noodles", 0.70f)
+        )
         val result = AnalyzerResult.DishRecognitionResult(
             dishName = "Pasta",
             confidence = 0.92f,
-            searchTerms = listOf("pasta", "italian", "noodles")
+            relatedLabels = relatedLabels
         )
 
         // Assert
         assertEquals("Pasta", result.dishName)
-        assertEquals(3, result.searchTerms.size)
-        assertTrue(result.searchTerms.contains("pasta"))
+        assertEquals(3, result.relatedLabels.size)
+        assertTrue(result.relatedLabels.any { it.text == "pasta" })
     }
 
     @Test
@@ -81,9 +86,9 @@ class BarcodeAnalyzerTest {
     fun `DetectedLabel filters by confidence threshold`() {
         // Arrange
         val labels = listOf(
-            AnalyzerResult.DetectedLabel("High Confidence", 0.9f),
-            AnalyzerResult.DetectedLabel("Medium Confidence", 0.6f),
-            AnalyzerResult.DetectedLabel("Low Confidence", 0.3f)
+            DetectedLabel("High Confidence", 0.9f),
+            DetectedLabel("Medium Confidence", 0.6f),
+            DetectedLabel("Low Confidence", 0.3f)
         )
 
         // Act
@@ -91,6 +96,6 @@ class BarcodeAnalyzerTest {
 
         // Assert
         assertEquals(2, filtered.size)
-        assertTrue(filtered.none { it.label == "Low Confidence" })
+        assertTrue(filtered.none { it.text == "Low Confidence" })
     }
 }

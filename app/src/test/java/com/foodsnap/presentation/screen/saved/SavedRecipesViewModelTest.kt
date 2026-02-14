@@ -7,7 +7,9 @@ import com.foodsnap.domain.usecase.saved.RemoveSavedRecipeUseCase
 import com.foodsnap.util.Resource
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -93,17 +95,17 @@ class SavedRecipesViewModelTest {
     @Test
     fun `removeRecipe calls use case`() = runTest {
         // Arrange
-        coEvery { removeSavedRecipeUseCase(any()) } returns flowOf(Resource.Success(Unit))
+        coEvery { removeSavedRecipeUseCase(any()) } just runs
 
         viewModel = SavedRecipesViewModel(getSavedRecipesUseCase, removeSavedRecipeUseCase)
         advanceUntilIdle()
 
         // Act
-        viewModel.removeRecipe(1L)
+        viewModel.removeRecipe(testRecipes.first())
         advanceUntilIdle()
 
         // Assert
-        coVerify { removeSavedRecipeUseCase(1L) }
+        coVerify { removeSavedRecipeUseCase(testRecipes.first().id) }
     }
 
     @Test

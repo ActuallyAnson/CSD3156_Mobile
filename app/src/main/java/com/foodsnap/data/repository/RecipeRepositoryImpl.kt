@@ -1,5 +1,6 @@
 package com.foodsnap.data.repository
 
+import android.util.Log
 import com.foodsnap.data.local.database.dao.IngredientDao
 import com.foodsnap.data.local.database.dao.RecipeDao
 import com.foodsnap.data.mapper.RecipeMapper
@@ -134,28 +135,34 @@ class RecipeRepositoryImpl @Inject constructor(
     override fun getRandomRecipes(count: Int, tags: String?): Flow<Resource<List<Recipe>>> = flow {
         emit(Resource.Loading())
 
+        // First, emit cached data if available for immediate display
+        val cachedRecipes = recipeDao.searchRecipesList("%%")
+        if (cachedRecipes.isNotEmpty()) {
+            Log.d("RecipeRepository", "Emitting ${cachedRecipes.size} cached recipes")
+            emit(Resource.Success(cachedRecipes.take(count).map { RecipeMapper.toDomain(it) }))
+        }
+
         try {
             // Fetch random recipes from network
+            Log.d("RecipeRepository", "Fetching random recipes from API, tags=$tags")
             val response = spoonacularApi.getRandomRecipes(count, tags)
 
             // Cache results
             val entities = response.recipes.map { RecipeMapper.toEntity(it) }
             recipeDao.insertRecipes(entities)
 
-            // Emit results
+            Log.d("RecipeRepository", "Got ${entities.size} recipes from API")
+
+            // Emit fresh results
             emit(Resource.Success(entities.map { RecipeMapper.toDomain(it) }))
 
         } catch (e: Exception) {
-            // On error, return any cached recipes
-            val cachedRecipes = recipeDao.searchRecipesList("%%")
-            if (cachedRecipes.isNotEmpty()) {
-                emit(Resource.Error(
-                    message = e.message ?: "Network error",
-                    data = cachedRecipes.take(count).map { RecipeMapper.toDomain(it) }
-                ))
-            } else {
+            Log.e("RecipeRepository", "Error fetching recipes: ${e.message}", e)
+            // On error, return any cached recipes if we haven't already
+            if (cachedRecipes.isEmpty()) {
                 emit(Resource.Error(e.message ?: "Failed to load recipes"))
             }
+            // If we already emitted cached data, just log the error silently
         }
     }.flowOn(ioDispatcher)
 

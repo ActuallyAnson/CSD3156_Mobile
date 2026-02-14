@@ -45,6 +45,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -176,7 +177,8 @@ private fun CameraPreviewContent(
     }
 
     Box(modifier = modifier) {
-        // Camera Preview
+        // Camera Preview — key forces rebind when mode changes so the correct analyzer is used
+        key(uiState.currentMode) {
         AndroidView(
             factory = { ctx ->
                 PreviewView(ctx).apply {
@@ -219,6 +221,7 @@ private fun CameraPreviewContent(
             },
             modifier = Modifier.fillMaxSize()
         )
+        } // end key(uiState.currentMode)
 
         // Scanning overlay
         ScanningOverlay(

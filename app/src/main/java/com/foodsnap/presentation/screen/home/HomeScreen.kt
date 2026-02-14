@@ -124,7 +124,7 @@ fun HomeScreen(
                     }
                 }
             )
-        }
+        },
     ) { paddingValues ->
         Column(
             modifier = Modifier

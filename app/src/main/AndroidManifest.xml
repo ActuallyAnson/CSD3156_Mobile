@@ -9,6 +9,9 @@
     <!-- Camera permission for barcode scanning and ingredient recognition -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Microphone permission for voice search -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <!-- Camera features for ML Kit -->
     <uses-feature
         android:name="android.hardware.camera"

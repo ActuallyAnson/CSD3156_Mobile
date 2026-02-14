@@ -60,7 +60,7 @@ fun FoodSnapNavGraph(
                 },
                 onSearchSubmit = { query ->
                     navController.navigate(Screen.Search.createRoute(query))
-                }
+                },
             )
         }
 
@@ -186,5 +186,6 @@ fun FoodSnapNavGraph(
                 onBackClick = { navController.popBackStack() }
             )
         }
+
     }
 }

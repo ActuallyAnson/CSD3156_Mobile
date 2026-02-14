@@ -84,7 +84,7 @@ class RecipeRepositoryImpl @Inject constructor(
             if (cachedRecipe != null) {
                 emit(Resource.Success(RecipeMapper.toDomain(cachedRecipe)))
                 // If instructions are already cached, skip the network fetch
-                if (cachedRecipe.instructions.isNotEmpty()) return@flow
+                if (!cachedRecipe.instructions.isNullOrEmpty()) return@flow
             }
 
             // Fetch full details from network

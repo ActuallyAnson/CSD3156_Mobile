@@ -110,7 +110,9 @@ class RecipeRepositoryImplTest {
                         diets = null, nutrition = null
                     )
                 ),
-                totalResults = 1
+                totalResults = 1,
+                offset = 0,
+                number = 1
             )
 
         // Act

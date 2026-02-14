@@ -130,7 +130,7 @@ class RecipeDaoTest {
         recipeDao.insertRecipe(recipe)
 
         // Act
-        recipeDao.deleteRecipe(recipe)
+        recipeDao.deleteRecipe(recipe.id)
         val retrieved = recipeDao.getRecipeById(1)
 
         // Assert

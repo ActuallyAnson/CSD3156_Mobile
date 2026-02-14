@@ -83,6 +83,8 @@ class RecipeRepositoryImpl @Inject constructor(
             val cachedRecipe = recipeDao.getRecipeById(recipeId)
             if (cachedRecipe != null) {
                 emit(Resource.Success(RecipeMapper.toDomain(cachedRecipe)))
+                // If instructions are already cached, skip the network fetch
+                if (cachedRecipe.instructions.isNotEmpty()) return@flow
             }
 
             // Fetch full details from network
@@ -135,34 +137,28 @@ class RecipeRepositoryImpl @Inject constructor(
     override fun getRandomRecipes(count: Int, tags: String?): Flow<Resource<List<Recipe>>> = flow {
         emit(Resource.Loading())
 
-        // First, emit cached data if available for immediate display
+        // Serve from cache if available — skip the network call to save API points
         val cachedRecipes = recipeDao.searchRecipesList("%%")
         if (cachedRecipes.isNotEmpty()) {
-            Log.d("RecipeRepository", "Emitting ${cachedRecipes.size} cached recipes")
+            Log.d("RecipeRepository", "Returning ${cachedRecipes.size} cached recipes, skipping API")
             emit(Resource.Success(cachedRecipes.take(count).map { RecipeMapper.toDomain(it) }))
+            return@flow
         }
 
+        // Cache empty — fetch from network for the first time
         try {
-            // Fetch random recipes from network
-            Log.d("RecipeRepository", "Fetching random recipes from API, tags=$tags")
+            Log.d("RecipeRepository", "Cache empty, fetching random recipes from API, tags=$tags")
             val response = spoonacularApi.getRandomRecipes(count, tags)
 
-            // Cache results
             val entities = response.recipes.map { RecipeMapper.toEntity(it) }
             recipeDao.insertRecipes(entities)
 
             Log.d("RecipeRepository", "Got ${entities.size} recipes from API")
-
-            // Emit fresh results
             emit(Resource.Success(entities.map { RecipeMapper.toDomain(it) }))
 
         } catch (e: Exception) {
             Log.e("RecipeRepository", "Error fetching recipes: ${e.message}", e)
-            // On error, return any cached recipes if we haven't already
-            if (cachedRecipes.isEmpty()) {
-                emit(Resource.Error(e.message ?: "Failed to load recipes"))
-            }
-            // If we already emitted cached data, just log the error silently
+            emit(Resource.Error(e.message ?: "Failed to load recipes"))
         }
     }.flowOn(ioDispatcher)
 
@@ -195,21 +191,15 @@ class RecipeRepositoryImpl @Inject constructor(
         try {
             val response = spoonacularApi.getSimilarRecipes(recipeId.toInt(), count)
 
-            // For similar recipes, we need to fetch full details
+            // Use the minimal data from the similar endpoint — no extra /information calls
             val recipes = response.map { similarDto ->
-                try {
-                    val details = spoonacularApi.getRecipeInformation(similarDto.id)
-                    RecipeMapper.toEntity(details)
-                } catch (e: Exception) {
-                    // If we can't get details, create minimal entity
-                    com.foodsnap.data.local.database.entity.RecipeEntity(
-                        id = similarDto.id.toLong(),
-                        spoonacularId = similarDto.id,
-                        title = similarDto.title,
-                        readyInMinutes = similarDto.readyInMinutes ?: 0,
-                        servings = similarDto.servings ?: 1
-                    )
-                }
+                com.foodsnap.data.local.database.entity.RecipeEntity(
+                    id = similarDto.id.toLong(),
+                    spoonacularId = similarDto.id,
+                    title = similarDto.title,
+                    readyInMinutes = similarDto.readyInMinutes ?: 0,
+                    servings = similarDto.servings ?: 1
+                )
             }
 
             recipeDao.insertRecipes(recipes)

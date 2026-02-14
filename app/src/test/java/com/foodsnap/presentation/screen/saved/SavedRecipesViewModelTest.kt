@@ -1,7 +1,7 @@
 package com.foodsnap.presentation.screen.saved
 
 import com.foodsnap.domain.model.Recipe
-import com.foodsnap.domain.model.Ingredient
+import com.foodsnap.domain.model.RecipeIngredient
 import com.foodsnap.domain.usecase.saved.GetSavedRecipesUseCase
 import com.foodsnap.domain.usecase.saved.RemoveSavedRecipeUseCase
 import com.foodsnap.util.Resource
@@ -131,12 +131,8 @@ class SavedRecipesViewModelTest {
             summary = "Test summary for $title",
             instructions = listOf("Step 1", "Step 2"),
             ingredients = listOf(
-                Ingredient(1, "Ingredient 1", "", 1.0, "cup", "")
+                RecipeIngredient(id = 1L, name = "Ingredient 1", amount = 1.0, unit = "cup")
             ),
-            vegetarian = false,
-            vegan = false,
-            glutenFree = false,
-            dairyFree = false,
             rating = 4.5f,
             sourceUrl = null
         )

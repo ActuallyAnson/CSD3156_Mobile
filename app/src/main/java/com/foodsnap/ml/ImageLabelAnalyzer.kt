@@ -80,22 +80,18 @@ class ImageLabelAnalyzer @Inject constructor() : ImageAnalysis.Analyzer {
         labeler.process(inputImage)
             .addOnSuccessListener { labels ->
                 if (labels.isNotEmpty()) {
-                    val detectedLabels = labels
-                        .filter { isFoodRelated(it.text) }
-                        .map { label ->
-                            DetectedLabel(
-                                text = label.text,
-                                confidence = label.confidence,
-                                index = label.index
-                            )
-                        }
-
-                    if (detectedLabels.isNotEmpty()) {
-                        Log.d(TAG, "Labels detected: ${detectedLabels.map { it.text }}")
-                        onLabelsDetected?.invoke(
-                            AnalyzerResult.ImageLabelResult(labels = detectedLabels)
+                    val detectedLabels = labels.map { label ->
+                        DetectedLabel(
+                            text = label.text,
+                            confidence = label.confidence,
+                            index = label.index
                         )
                     }
+
+                    Log.d(TAG, "Labels detected: ${detectedLabels.map { it.text }}")
+                    onLabelsDetected?.invoke(
+                        AnalyzerResult.ImageLabelResult(labels = detectedLabels)
+                    )
                 }
             }
             .addOnFailureListener { exception ->
@@ -110,28 +106,6 @@ class ImageLabelAnalyzer @Inject constructor() : ImageAnalysis.Analyzer {
             .addOnCompleteListener {
                 imageProxy.close()
             }
-    }
-
-    /**
-     * Filters labels to only include food-related items.
-     * This helps reduce noise from non-food objects.
-     */
-    private fun isFoodRelated(label: String): Boolean {
-        val foodKeywords = listOf(
-            "food", "fruit", "vegetable", "meat", "fish", "bread", "cheese",
-            "egg", "milk", "butter", "rice", "pasta", "noodle", "soup",
-            "salad", "sandwich", "pizza", "burger", "chicken", "beef", "pork",
-            "apple", "banana", "orange", "tomato", "potato", "carrot", "onion",
-            "lettuce", "cucumber", "pepper", "mushroom", "garlic", "lemon",
-            "produce", "ingredient", "grocery", "snack", "dessert", "cake",
-            "cookie", "chocolate", "candy", "beverage", "drink", "juice",
-            "coffee", "tea", "wine", "beer", "sauce", "spice", "herb"
-        )
-
-        val lowerLabel = label.lowercase()
-        return foodKeywords.any { keyword ->
-            lowerLabel.contains(keyword)
-        }
     }
 
     /**

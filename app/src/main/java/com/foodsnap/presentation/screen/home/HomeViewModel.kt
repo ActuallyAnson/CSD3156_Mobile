@@ -64,7 +64,7 @@ class HomeViewModel @Inject constructor(
     private fun loadFeaturedRecipes(isRefreshing: Boolean = false) {
         viewModelScope.launch {
             val tags = _uiState.value.selectedCategoryApiValue
-            getRandomRecipesUseCase(count = 20, tags = tags).collect { result ->
+            getRandomRecipesUseCase(count = 10, tags = tags).collect { result ->
                 when (result) {
                     is Resource.Loading -> {
                         _uiState.update {

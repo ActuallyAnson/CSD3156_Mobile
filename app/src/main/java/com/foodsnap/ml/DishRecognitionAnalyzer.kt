@@ -116,7 +116,7 @@ class DishRecognitionAnalyzer @Inject constructor() : ImageAnalysis.Analyzer {
                     )
                 }
 
-                // Find the best matching dish
+                // Find the best matching dish from explicit mappings only
                 val dishMatch = findBestDishMatch(labels.map { it.text.lowercase() to it.confidence })
 
                 if (dishMatch != null) {
@@ -154,33 +154,15 @@ class DishRecognitionAnalyzer @Inject constructor() : ImageAnalysis.Analyzer {
         var bestMatch: Pair<String, Float>? = null
 
         for ((label, confidence) in labelConfidences) {
-            // Check direct match in dish mappings
+            // Only match against explicit dish mappings — avoids generic "food"/"dish" labels
             dishMappings.entries.forEach { (keyword, dishName) ->
                 if (label.contains(keyword) && (bestMatch == null || confidence > bestMatch!!.second)) {
                     bestMatch = dishName to confidence
                 }
             }
-
-            // Check if the label itself looks like a food item
-            if (isFoodLabel(label) && confidence > 0.7f) {
-                if (bestMatch == null || confidence > bestMatch!!.second) {
-                    bestMatch = label to confidence
-                }
-            }
         }
 
         return bestMatch
-    }
-
-    /**
-     * Checks if a label represents a food item.
-     */
-    private fun isFoodLabel(label: String): Boolean {
-        val foodIndicators = listOf(
-            "food", "dish", "meal", "cuisine", "recipe", "cooked",
-            "baked", "fried", "grilled", "roasted", "steamed"
-        )
-        return foodIndicators.any { label.contains(it) }
     }
 
     /**

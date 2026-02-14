@@ -4,9 +4,12 @@ import android.content.ContentResolver
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -18,13 +21,18 @@ import org.junit.runner.RunWith
  * - URI matching
  * - MIME type returns
  */
+@HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class RecipeContentProviderTest {
+
+    @get:Rule
+    val hiltRule = HiltAndroidRule(this)
 
     private lateinit var contentResolver: ContentResolver
 
     @Before
     fun setup() {
+        hiltRule.inject()
         val context = ApplicationProvider.getApplicationContext<Context>()
         contentResolver = context.contentResolver
     }

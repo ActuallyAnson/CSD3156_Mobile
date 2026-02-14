@@ -132,18 +132,10 @@ class CameraViewModel @Inject constructor(
                     val product = response.product
                     val productName = product.productName ?: product.genericName ?: barcode
 
-                    // Parse ingredients from ingredients text or use categories
-                    val ingredients = product.ingredientsText?.split(",")
-                        ?.map { it.trim() }
-                        ?.filter { it.isNotEmpty() }
-                        ?: product.categoriesTags?.map { it.removePrefix("en:") }
-                        ?: emptyList()
-
                     _uiState.update {
                         it.copy(
                             scanResult = ScanResult(
                                 productName = productName,
-                                ingredients = ingredients,
                                 confidence = 1f
                             )
                         )

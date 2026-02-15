@@ -39,9 +39,15 @@ class RecipeContentProvider : ContentProvider() {
         fun ingredientDao(): IngredientDao
     }
 
-    private lateinit var recipeDao: RecipeDao
-    private lateinit var savedRecipeDao: SavedRecipeDao
-    private lateinit var ingredientDao: IngredientDao
+    private val entryPoint: RecipeContentProviderEntryPoint by lazy {
+        EntryPointAccessors.fromApplication(
+            context!!.applicationContext,
+            RecipeContentProviderEntryPoint::class.java
+        )
+    }
+    private val recipeDao: RecipeDao get() = entryPoint.recipeDao()
+    private val savedRecipeDao: SavedRecipeDao get() = entryPoint.savedRecipeDao()
+    private val ingredientDao: IngredientDao get() = entryPoint.ingredientDao()
 
     companion object {
         private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH).apply {
@@ -78,17 +84,7 @@ class RecipeContentProvider : ContentProvider() {
         }
     }
 
-    override fun onCreate(): Boolean {
-        val appContext = context?.applicationContext ?: return false
-        val entryPoint = EntryPointAccessors.fromApplication(
-            appContext,
-            RecipeContentProviderEntryPoint::class.java
-        )
-        recipeDao = entryPoint.recipeDao()
-        savedRecipeDao = entryPoint.savedRecipeDao()
-        ingredientDao = entryPoint.ingredientDao()
-        return true
-    }
+    override fun onCreate(): Boolean = true
 
     override fun query(
         uri: Uri,

@@ -188,9 +188,13 @@ GitHub Actions runs on every push to `main`/`develop` and on PRs to `main`:
 
 ## Team Contributions
 
-| Member | Contributions |
-|--------|--------------|
-| Anson Teng | TBD |
+| Member | SIT ID | Contributions |
+|--------|--------|--------------|
+| Anson Teng | 2301360 | Core architecture, data layer, Room database with offline-first caching, Retrofit networking (Spoonacular + OpenFoodFacts APIs), Hilt dependency injection, all critical bug fixes (CI/CD pipeline, Gradle wrapper, KVM emulator, Hilt instrumentation test setup, ContentProvider lazy initialization) |
+| Thang Weng Khong | 2301372 | Presentation layer, Jetpack Compose screens, ViewModels, navigation graph, UI polish and Material Design 3 theming |
+| Tan Yong Chin | 2301359 | Camera module implementation, ML Kit integration (barcode scanning, image labeling, dish recognition), CameraX analyzer setup and mode switching |
+| Yap Zi Yang Irwen | 2301345 | Sensor integration (accelerometer shake detection), voice search (SpeechRecognizer), text-to-speech cooking mode implementation |
+| Muhammad Fakhrurazi Bin Helmi | 2303346 | Unit test implementation, instrumentation test setup, CI/CD pipeline configuration and debugging|
 
 ## AI Usage Declaration
 

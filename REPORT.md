@@ -13,11 +13,11 @@
 
 | Member | SIT ID | Contributions |
 |--------|--------|--------------|
-| Anson Teng | 2301360 | TBD |
-| TBD | TBD | TBD |
-| TBD | TBD | TBD |
-| TBD | TBD | TBD |
-| TBD | TBD | TBD |
+| Anson Teng | 2301360 | Core architecture, data layer, Room database, offline-first caching, Retrofit networking, Hilt DI, bug fixes (CI/CD, KVM, Hilt tests, ContentProvider) |
+| Thang Weng Khong | 2301372 | Presentation layer, Compose screens, ViewModels, navigation, UI theming |
+| Tan Yong Chin | 2301359 | Camera module, ML Kit integration, barcode/ingredient/dish analyzers |
+| Yap Zi Yang Irwen | 2301345 | Sensors (shake detection), voice search, text-to-speech cooking mode |
+| Muhammad Fakhrurazi Bin Helmi | 2303346 | Unit & instrumentation tests, CI/CD pipeline|
 
 ---
 

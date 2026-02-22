@@ -67,10 +67,33 @@ class BarcodeAnalyzer @Inject constructor() : ImageAnalysis.Analyzer {
                     barcode.rawValue?.let { value ->
                         val format = getBarcodeFormatName(barcode.format)
                         Log.d(TAG, "Barcode detected: $value (format: $format)")
+
+                        val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+                        val (uprightWidth, uprightHeight) = if (
+                            rotationDegrees == 90 || rotationDegrees == 270
+                        ) {
+                            imageProxy.height to imageProxy.width
+                        } else {
+                            imageProxy.width to imageProxy.height
+                        }
+
+                        val boundingBox = barcode.boundingBox?.let { rect ->
+                            BoundingBox(
+                                left = rect.left,
+                                top = rect.top,
+                                right = rect.right,
+                                bottom = rect.bottom
+                            )
+                        }
+
                         onBarcodeDetected?.invoke(
                             AnalyzerResult.BarcodeResult(
                                 barcode = value,
-                                format = format
+                                format = format,
+                                boundingBox = boundingBox,
+                                imageWidth = uprightWidth,
+                                imageHeight = uprightHeight,
+                                rotationDegrees = rotationDegrees
                             )
                         )
                     }

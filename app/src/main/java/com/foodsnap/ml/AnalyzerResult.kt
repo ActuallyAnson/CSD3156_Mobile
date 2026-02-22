@@ -14,7 +14,11 @@ sealed class AnalyzerResult {
      */
     data class BarcodeResult(
         val barcode: String,
-        val format: String
+        val format: String,
+        val boundingBox: BoundingBox? = null,
+        val imageWidth: Int? = null,
+        val imageHeight: Int? = null,
+        val rotationDegrees: Int? = null
     ) : AnalyzerResult()
 
     /**
@@ -67,4 +71,16 @@ data class DetectedLabel(
     val text: String,
     val confidence: Float,
     val index: Int = -1
+)
+
+/**
+ * Simple bounding box container independent of Android framework types.
+ *
+ * Coordinates are in image pixel space with origin at top-left.
+ */
+data class BoundingBox(
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int
 )

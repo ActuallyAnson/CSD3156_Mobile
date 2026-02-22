@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
@@ -49,7 +48,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -65,6 +63,8 @@ import com.foodsnap.presentation.navigation.CameraMode
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -90,7 +90,19 @@ fun CameraScreen(
     viewModel: CameraViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val overlayState by viewModel.overlayState.collectAsState()
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onCameraScreenResumed()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // Set initial mode
     LaunchedEffect(initialMode) {
@@ -99,10 +111,10 @@ fun CameraScreen(
 
     // Handle scan result
     LaunchedEffect(uiState.scanResult) {
-        uiState.scanResult?.let { result ->
-            onScanResult(result)
-            viewModel.clearScanResult()
-        }
+        val result = uiState.scanResult ?: return@LaunchedEffect
+        // Consume without resuming scanning to avoid multiple navigations stacking.
+        viewModel.consumeScanResult()
+        onScanResult(result)
     }
 
     Scaffold(
@@ -143,6 +155,7 @@ fun CameraScreen(
                 CameraPreviewContent(
                     viewModel = viewModel,
                     uiState = uiState,
+                    overlayState = overlayState,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -163,6 +176,7 @@ fun CameraScreen(
 private fun CameraPreviewContent(
     viewModel: CameraViewModel,
     uiState: CameraUiState,
+    overlayState: ScannerHudOverlayState,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -225,10 +239,8 @@ private fun CameraPreviewContent(
 
         // Scanning overlay
         ScanningOverlay(
-            mode = uiState.currentMode,
-            isScanning = uiState.isScanning,
-            detectedItems = uiState.detectedItems,
-            modifier = Modifier.fillMaxSize()
+            state = overlayState,
+            modifier = Modifier.matchParentSize()
         )
 
         // Mode selector at bottom
@@ -262,45 +274,10 @@ private fun CameraPreviewContent(
  */
 @Composable
 private fun ScanningOverlay(
-    mode: CameraMode,
-    isScanning: Boolean,
-    detectedItems: List<String>,
+    state: ScannerHudOverlayState,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        // Semi-transparent overlay with cutout
-        Box(
-            modifier = Modifier
-                .size(250.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White.copy(alpha = 0.1f))
-        )
-
-        // Scanning status text
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 100.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = if (isScanning) {
-                    when (mode) {
-                        CameraMode.BARCODE -> "Point at barcode"
-                        CameraMode.INGREDIENT -> "Point at ingredient"
-                        CameraMode.DISH -> "Point at dish"
-                    }
-                } else {
-                    "Processing..."
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White
-            )
-        }
-    }
+    ScannerHudOverlay(state = state, modifier = modifier)
 }
 
 /**

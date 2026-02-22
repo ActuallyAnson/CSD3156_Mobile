@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.foodsnap.data.remote.api.OpenFoodFactsApi
 import com.foodsnap.ml.AnalyzerResult
+import com.foodsnap.ml.BoundingBox
 import com.foodsnap.ml.BarcodeAnalyzer
 import com.foodsnap.ml.DishRecognitionAnalyzer
 import com.foodsnap.ml.ImageLabelAnalyzer
@@ -12,9 +13,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharingStarted
+import androidx.compose.ui.geometry.Rect
 import javax.inject.Inject
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * UI state for the Camera screen.
@@ -55,6 +61,48 @@ class CameraViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CameraUiState())
     val uiState: StateFlow<CameraUiState> = _uiState.asStateFlow()
 
+    private val _overlayData = MutableStateFlow(AnalyzerOverlayData())
+    private val barcodeInFlight = AtomicBoolean(false)
+    private var lastHandledBarcode: String? = null
+    private var lastHandledBarcodeAtMs: Long = 0L
+
+    val overlayState: StateFlow<ScannerHudOverlayState> = combine(
+        uiState,
+        _overlayData
+    ) { ui, overlay ->
+        val statusText = when {
+            ui.error != null -> "Error: ${ui.error}"
+            ui.isScanning -> when (ui.currentMode) {
+                CameraMode.BARCODE -> "Scanning barcode..."
+                CameraMode.INGREDIENT -> "Searching..."
+                CameraMode.DISH -> "Searching..."
+            }
+            else -> "Detected"
+        }
+
+        val labels = overlay.labels.take(3)
+        val lowConfidence = labels.isNotEmpty() && labels.maxOf { it.confidence } < 0.70f
+
+        ScannerHudOverlayState(
+            mode = ui.currentMode,
+            statusText = statusText,
+            labels = labels,
+            scanEnabled = ui.isScanning,
+            boxes = overlay.boxes.take(10),
+            qualityHints = ScannerHudQualityHints(lowConfidence = lowConfidence)
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ScannerHudOverlayState(
+            mode = CameraMode.BARCODE,
+            statusText = "Scanning barcode...",
+            labels = emptyList(),
+            scanEnabled = true,
+            boxes = emptyList()
+        )
+    )
+
     init {
         setupAnalyzers()
     }
@@ -65,6 +113,17 @@ class CameraViewModel @Inject constructor(
     private fun setupAnalyzers() {
         // Barcode analyzer callbacks
         barcodeAnalyzer.setOnBarcodeDetectedListener { result ->
+            updateOverlayFromBarcode(result)
+            val state = _uiState.value
+            if (state.currentMode != CameraMode.BARCODE || !state.isScanning) return@setOnBarcodeDetectedListener
+
+            val now = System.currentTimeMillis()
+            if (result.barcode == lastHandledBarcode && now - lastHandledBarcodeAtMs < 10_000L) {
+                return@setOnBarcodeDetectedListener
+            }
+            if (!barcodeInFlight.compareAndSet(false, true)) return@setOnBarcodeDetectedListener
+            lastHandledBarcode = result.barcode
+            lastHandledBarcodeAtMs = now
             onBarcodeScanned(result.barcode)
         }
         barcodeAnalyzer.setOnErrorListener { error ->
@@ -73,6 +132,9 @@ class CameraViewModel @Inject constructor(
 
         // Image label analyzer callbacks
         imageLabelAnalyzer.setOnLabelsDetectedListener { result ->
+            val state = _uiState.value
+            if (state.currentMode != CameraMode.INGREDIENT || !state.isScanning) return@setOnLabelsDetectedListener
+            updateOverlayLabels(result.labels.map { it.text to it.confidence })
             onIngredientsDetected(result.labels.map { it.text to it.confidence })
         }
         imageLabelAnalyzer.setOnErrorListener { error ->
@@ -81,6 +143,9 @@ class CameraViewModel @Inject constructor(
 
         // Dish recognition analyzer callbacks
         dishRecognitionAnalyzer.setOnDishRecognizedListener { result ->
+            val state = _uiState.value
+            if (state.currentMode != CameraMode.DISH || !state.isScanning) return@setOnDishRecognizedListener
+            updateOverlayFromDish(result.dishName, result.confidence, result.relatedLabels.map { it.text to it.confidence })
             onDishRecognized(result.dishName, result.confidence)
         }
         dishRecognitionAnalyzer.setOnErrorListener { error ->
@@ -102,6 +167,8 @@ class CameraViewModel @Inject constructor(
                 isScanning = true
             )
         }
+        _overlayData.value = AnalyzerOverlayData()
+        barcodeInFlight.set(false)
     }
 
     /**
@@ -121,9 +188,8 @@ class CameraViewModel @Inject constructor(
      * @param barcode The scanned barcode value
      */
     private fun onBarcodeScanned(barcode: String) {
+        _uiState.update { it.copy(isScanning = false) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isScanning = false) }
-
             try {
                 // Look up product by barcode using OpenFoodFacts API
                 val response = openFoodFactsApi.getProductByBarcode(barcode)
@@ -166,6 +232,7 @@ class CameraViewModel @Inject constructor(
      * @param labels List of detected labels with confidence
      */
     private fun onIngredientsDetected(labels: List<Pair<String, Float>>) {
+        if (!_uiState.value.isScanning) return
         val ingredients = labels
             .filter { it.second >= 0.7f }
             .map { it.first }
@@ -194,6 +261,7 @@ class CameraViewModel @Inject constructor(
      * @param confidence Confidence score
      */
     private fun onDishRecognized(dishName: String, confidence: Float) {
+        if (!_uiState.value.isScanning) return
         _uiState.update { it.copy(detectedItems = listOf(dishName)) }
 
         if (confidence >= 0.7f) {
@@ -238,6 +306,29 @@ class CameraViewModel @Inject constructor(
                 isScanning = true
             )
         }
+        _overlayData.value = AnalyzerOverlayData()
+        barcodeInFlight.set(false)
+    }
+
+    /**
+     * Consumes the current scan result without resuming scanning.
+     *
+     * This prevents analyzer callbacks from producing a new scan result while the app is navigating away.
+     */
+    fun consumeScanResult() {
+        _uiState.update { it.copy(scanResult = null) }
+    }
+
+    /**
+     * Resumes scanning if the camera screen is visible again and no result is pending.
+     */
+    fun onCameraScreenResumed() {
+        val state = _uiState.value
+        if (state.scanResult == null && !state.isScanning) {
+            _uiState.update { it.copy(detectedItems = emptyList(), isScanning = true) }
+            _overlayData.value = AnalyzerOverlayData()
+            barcodeInFlight.set(false)
+        }
     }
 
     /**
@@ -263,4 +354,95 @@ class CameraViewModel @Inject constructor(
         imageLabelAnalyzer.close()
         dishRecognitionAnalyzer.close()
     }
+
+    private fun updateOverlayLabels(labels: List<Pair<String, Float>>) {
+        val top = labels
+            .sortedByDescending { it.second }
+            .take(3)
+            .map { (name, confidence) ->
+                ScannerHudLabel(name = name, confidence = confidence.coerceIn(0f, 1f))
+            }
+
+        _overlayData.update { it.copy(labels = top) }
+    }
+
+    private fun updateOverlayFromDish(
+        dishName: String,
+        confidence: Float,
+        related: List<Pair<String, Float>>
+    ) {
+        val primary = ScannerHudLabel(name = dishName, confidence = confidence.coerceIn(0f, 1f))
+        val secondary = related
+            .filterNot { it.first.equals(dishName, ignoreCase = true) }
+            .sortedByDescending { it.second }
+            .take(2)
+            .map { (name, conf) -> ScannerHudLabel(name = name, confidence = conf.coerceIn(0f, 1f)) }
+
+        _overlayData.update {
+            it.copy(labels = listOf(primary) + secondary)
+        }
+    }
+
+    private fun updateOverlayFromBarcode(result: AnalyzerResult.BarcodeResult) {
+        val bbox = result.boundingBox
+        val w = result.imageWidth
+        val h = result.imageHeight
+        if (bbox == null || w == null || h == null) {
+            _overlayData.update { it.copy(boxes = emptyList()) }
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val newBox = ScannerHudBox(
+            imageRect = bbox.toComposeRect(),
+            imageWidth = w,
+            imageHeight = h,
+            label = "barcode",
+            confidence = null,
+            isMirrored = false
+        )
+
+        // Throttle tiny movements to avoid noisy updates.
+        val previous = _overlayData.value
+        val prevBox = previous.boxes.firstOrNull()
+        if (
+            prevBox != null &&
+            previous.lastBarcodeValue == result.barcode &&
+            now - previous.lastBarcodeUpdateMs < 100 &&
+            rectDeltaWithin(prevBox.imageRect, newBox.imageRect, deltaPx = 8f)
+        ) {
+            return
+        }
+
+        _overlayData.update {
+            it.copy(
+                boxes = listOf(newBox),
+                lastBarcodeValue = result.barcode,
+                lastBarcodeUpdateMs = now
+            )
+        }
+    }
+}
+
+private data class AnalyzerOverlayData(
+    val labels: List<ScannerHudLabel> = emptyList(),
+    val boxes: List<ScannerHudBox> = emptyList(),
+    val lastBarcodeValue: String? = null,
+    val lastBarcodeUpdateMs: Long = 0L
+)
+
+private fun BoundingBox.toComposeRect(): Rect {
+    return Rect(
+        left = left.toFloat(),
+        top = top.toFloat(),
+        right = right.toFloat(),
+        bottom = bottom.toFloat()
+    )
+}
+
+private fun rectDeltaWithin(a: Rect, b: Rect, deltaPx: Float): Boolean {
+    return (kotlin.math.abs(a.left - b.left) <= deltaPx) &&
+        (kotlin.math.abs(a.top - b.top) <= deltaPx) &&
+        (kotlin.math.abs(a.right - b.right) <= deltaPx) &&
+        (kotlin.math.abs(a.bottom - b.bottom) <= deltaPx)
 }

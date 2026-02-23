@@ -196,12 +196,13 @@ class CameraViewModel @Inject constructor(
 
                 if (response.status == 1 && response.product != null) {
                     val product = response.product
-                    val productName = product.productName ?: product.genericName ?: barcode
+                    val rawProductName = product.productName ?: product.genericName ?: barcode
+                    val cleanedProductName = normalizeBarcodeProductName(rawProductName, product.brands)
 
                     _uiState.update {
                         it.copy(
                             scanResult = ScanResult(
-                                productName = productName,
+                                productName = cleanedProductName,
                                 confidence = 1f
                             )
                         )
@@ -445,4 +446,37 @@ private fun rectDeltaWithin(a: Rect, b: Rect, deltaPx: Float): Boolean {
         (kotlin.math.abs(a.top - b.top) <= deltaPx) &&
         (kotlin.math.abs(a.right - b.right) <= deltaPx) &&
         (kotlin.math.abs(a.bottom - b.bottom) <= deltaPx)
+}
+
+private fun normalizeBarcodeProductName(raw: String, brand: String? = null): String {
+    // Keep a copy for debugging if you want
+    var s = raw.trim().lowercase()
+
+    // Remove bracketed noise
+    s = s.replace(Regex("""[\(\[].*?[\)\]]"""), " ")
+
+    // Remove quantities
+    s = s.replace(
+        Regex("""\b\d+(\.\d+)?\s?(g|kg|ml|l|oz|lb|pcs|pc|pack|packs)\b""", RegexOption.IGNORE_CASE),
+        " "
+    )
+
+    // Normalize separators/whitespace early
+    s = s.replace(Regex("""[|•·]"""), " ")
+    s = s.replace(Regex("""\s+"""), " ").trim()
+
+    // Remove brand if provided (OpenFoodFacts sometimes has "Brand1, Brand2")
+    brand?.lowercase()?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }?.forEach { b ->
+        if (s.startsWith(b + " ")) s = s.removePrefix(b).trim()
+    }
+
+    // Cut off descriptors like "in tomato sauce", "with cheese", etc.
+    s = s.replace(Regex("""\s+(in|with)\s+.*$"""), "")
+
+    // Remove packaging words
+    s = s.replace(Regex("""\b(can|tin|bottle|jar|pouch|sachet)\b"""), "")
+        .replace(Regex("""\s+"""), " ")
+        .trim()
+
+    return s
 }
